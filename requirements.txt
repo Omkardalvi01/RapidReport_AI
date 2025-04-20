@@ -1,0 +1,12 @@
+langgraph
+langchain
+langchain_google_genai
+langchain_community
+pydantic
+duckduckgo-search
+twilio
+Flask
+wikipedia
+fastapi[standard]
+flask_cors
+dotenv
