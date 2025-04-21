@@ -9,4 +9,4 @@ Flask
 wikipedia
 fastapi[standard]
 flask_cors
-dotenv
+python-dotenv

@@ -1,5 +1,4 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 from pydantic import BaseModel
 from typing import Optional
@@ -19,10 +18,12 @@ from dotenv import load_dotenv
 load_dotenv()
 endpoint = FastAPI()
 
+#API keys
 API_KEY = os.getenv("GEMINI_KEY")
 ACCOUNT_SID = os.getenv("account_sid")
 TWILIO_AUTH_TOKEN = os.getenv("auth_token")
 PHONE_NO = os.getenv("PHONE_NO")
+
 # Setup tools
 web_search = DuckDuckGoSearchRun()
 wikipedia = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper())
@@ -106,7 +107,9 @@ def bad_impacts(state: State) -> State:
 
 def report(state: State) -> State:
     prompt = PromptTemplate(
-        template="Take everything from {info}, as well as good impacts such as {good} and bad impacts such as {bad} and create a comprehensive report for it",
+        template="Take everything from {info}, as well as good impacts such as {good} and bad impacts such as {bad} and create a detailed report for it" \
+        "Generate only the HTML content, without explanations or comments. Return just the HTML to be rendered in a browser." \
+        "Maake it long",
         input_variables=['info', 'good', 'bad']
     )
     chain = prompt | llm
@@ -158,8 +161,8 @@ class QueryInput(BaseModel):
 def submit_query(body: QueryInput):
     state_input = {"query": body.query}
     result = app.invoke(state_input)
-    with open('Report.md', 'w+', encoding='utf-8') as f:
-        f.write(result['report'])
+    # with open('Report.md', 'w+', encoding='utf-8') as f:
+    #     f.write(result['report'])
     return JSONResponse(content={"response" : result['report']})
 
 from fastapi.middleware.cors import CORSMiddleware
