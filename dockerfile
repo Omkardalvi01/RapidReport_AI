@@ -5,6 +5,7 @@ RUN apk add --no-cache gcc musl-dev libffi-dev
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
+COPY .env /
 COPY app.py /
 COPY content_creator.py /
 COPY static /static/
