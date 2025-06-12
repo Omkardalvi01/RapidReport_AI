@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 from langchain_community.utilities.twilio import TwilioAPIWrapper
 from langgraph.graph import StateGraph, END
-from langchain_community.tools import DuckDuckGoSearchRun
+from langchain_community.utilities import GoogleSerperAPIWrapper
 from langchain_community.tools import WikipediaQueryRun
 from langchain_community.utilities import WikipediaAPIWrapper
 from langchain.output_parsers import CommaSeparatedListOutputParser
@@ -20,18 +20,19 @@ endpoint = FastAPI()
 
 #API keys
 API_KEY = os.getenv("GEMINI_KEY")
-ACCOUNT_SID = os.getenv("account_sid")
-TWILIO_AUTH_TOKEN = os.getenv("auth_token")
-PHONE_NO = os.getenv("PHONE_NO")
+SERPERAPI = os.getenv("SERPER_API")
+# ACCOUNT_SID = os.getenv("account_sid")
+# TWILIO_AUTH_TOKEN = os.getenv("auth_token")
+# PHONE_NO = os.getenv("PHONE_NO")
 
 # Setup tools
-web_search = DuckDuckGoSearchRun()
+web_search = GoogleSerperAPIWrapper(serper_api_key=SERPERAPI)  # Ensure SERPAPI_API_KEY is set in env
 wikipedia = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper())
-twilio = TwilioAPIWrapper(
-    account_sid=ACCOUNT_SID,
-    auth_token=TWILIO_AUTH_TOKEN,
-    from_number="whatsapp:+14155238886"
-)
+# twilio = TwilioAPIWrapper(
+#     account_sid=ACCOUNT_SID,
+#     auth_token=TWILIO_AUTH_TOKEN,
+#     from_number="whatsapp:+14155238886"
+# )
 tools = [
     Tool(name='websearch', func=web_search.run, description="Tool used to search web"),
     Tool(name='wiki_search', func=wikipedia.run, description="Tool used to wikipedia search which is a free online encyclopedia")
@@ -123,16 +124,16 @@ def report(state: State) -> State:
         report=output.content
     )
 
-def snd_report(state: State) -> State:
-    twilio.run(str(state.keyword), PHONE_NO)
-    return State(
-        query=state.query,
-        keyword=state.keyword,
-        info=state.info,
-        good=state.good,
-        bad=state.bad,
-        report=state.report
-    )
+# def snd_report(state: State) -> State:
+#     twilio.run(str(state.keyword), PHONE_NO)
+#     return State(
+#         query=state.query,
+#         keyword=state.keyword,
+#         info=state.info,
+#         good=state.good,
+#         bad=state.bad,
+#         report=state.report
+#     )
 
 
 workflow = StateGraph(State)
@@ -141,7 +142,7 @@ workflow.add_node('information', info)
 workflow.add_node('good_stuff', good_impacts)
 workflow.add_node('bad_stuff', bad_impacts)
 workflow.add_node('ovr_report', report)
-workflow.add_node('send_report', snd_report)
+# workflow.add_node('send_report', snd_report)
 
 
 workflow.set_entry_point('keywords')
@@ -149,8 +150,8 @@ workflow.add_edge('keywords', 'information')
 workflow.add_edge('information', 'good_stuff')
 workflow.add_edge('good_stuff', 'bad_stuff')
 workflow.add_edge('bad_stuff', 'ovr_report')
-workflow.add_edge('ovr_report', 'send_report')
-workflow.add_edge('send_report', END)
+workflow.add_edge('ovr_report', END)
+# workflow.add_edge('send_report', END)
 
 app = workflow.compile()
 
@@ -169,7 +170,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 endpoint.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5000"],
+    allow_origins=["http://localhost:5000", "http://127.0.0.1:5000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -177,4 +178,4 @@ endpoint.add_middleware(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(endpoint, host="0.0.0.0", port=8000)
+    uvicorn.run(endpoint, port=8000)
